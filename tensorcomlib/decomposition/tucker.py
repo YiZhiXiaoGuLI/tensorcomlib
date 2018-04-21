@@ -1,9 +1,10 @@
 import numpy as np
 from  tensorcomlib import base
 from  tensorcomlib import tensor
-from sklearn.utils.extmath import randomized_svd
-
-
+from  sklearn.utils.extmath import randomized_svd
+from  tensorcomlib.MatrixSVD import SVD
+from matplotlib.pylab import plt
+import time
 
 #hosvd
 def hosvd(X):
@@ -17,7 +18,6 @@ def hosvd(X):
         U[d] = U1
     core  = S
     return U,core
-
 
 #randomized_hosvd
 def randomized_hosvd(X):
@@ -34,26 +34,6 @@ def randomized_hosvd(X):
     core = S
     return U, core
 
-def H(A):
-    return np.transpose(np.conjugate(A))
-
-def TruncatedSvd(X,eps_svd = None):
-
-    U,S,V = np.linalg.svd(X,full_matrices=False)
-    N1,N2 = X.shape
-    r = min(N1,N2)
-    for i in range(r):
-        if sum(S[i:r]) <= eps_svd:
-            r =i
-            break
-    U = U[:,:r].copy()
-    S = S[:r].copy()
-    V = V[:r,:].copy()
-
-    return U,H(V),r
-
-
-
 #TruncatedHosvd
 def TruncatedHosvd(X,eps):
     U = [None for _ in range(X.ndims())]
@@ -63,32 +43,28 @@ def TruncatedHosvd(X,eps):
     for d in range(dims):
         C = base.unfold(X,d)
         eps_svd = eps**2*base.tennorm(X)**2/dims
-        U1,S1,r = TruncatedSvd(C,eps_svd=eps_svd)
+        U1,S1,r = SVD.TruncatedSvd(C,eps_svd=eps_svd)
         R[d] = r
         U[d] = U1
         S = base.tensor_times_mat(S,U[d].T,d)
     return U,S,R,eps_svd
 
-
-
-def PartialSvd(X,n):
-    U, S, V = np.linalg.svd(X, full_matrices=True)
-    U= U[:,:n]
-    return U,S,V
-
+#PartialHosvd
 def PartialHosvd(X,ranks):
     U = [None for _ in range(X.ndims())]
     dims = X.ndims()
     S = X
     for d in range(dims):
         C = base.unfold(X, d)
-        U1,_,_= PartialSvd(C,ranks[d])
+        U1,_,_= SVD.PartialSvd(C,ranks[d])
         U[d] = U1
         S = base.tensor_times_mat(S, U[d].T, d)
     return U, S
 
 #hooi
-def hooi(X,maxiter=1000,init='svd',eps = 1e-11,tol=1e-10):
+def hooi(X,maxiter=1000,init='svd',eps = 1e-11,tol=1e-10, plot = True):
+
+    time0 = time.time()
 
     dims = X.ndims()
     modelist = list(range(dims))
@@ -104,7 +80,9 @@ def hooi(X,maxiter=1000,init='svd',eps = 1e-11,tol=1e-10):
     else:
         U,core = randomized_hosvd(X)
 
-    error_old = 0
+    error_X = []
+    error_iter = []
+
     normx = base.tennorm(X)
     S1 = X
 
@@ -117,19 +95,32 @@ def hooi(X,maxiter=1000,init='svd',eps = 1e-11,tol=1e-10):
             L.pop(i)
             Y = base.tensor_multi_times_mat(X,U1,modelist=L,transpose=True)
             C = base.unfold(Y,i)
-            Uk[i],_,_ = PartialSvd(C,ranks[i])
+            Uk[i],_,_ = SVD.PartialSvd(C,ranks[i])
 
         core = base.tensor_multi_times_mat(X,Uk,list(range(dims)),transpose=True)
         U = Uk
         S2 = base.tensor_multi_times_mat(core,Uk,list(range(dims)),transpose=False)
-        # error = base.tennorm(base.tensor_sub(S2,S1))
-        # S1 = S2
-        error = base.tennorm(base.tensor_sub(X, S2))
+        error0 = base.tennorm(base.tensor_sub(S2,S1))
+        S1 = S2
+        error_iter.append(error0)
+        error1 = base.tennorm(base.tensor_sub(X, S2))
+        error_X.append(error1)
 
-        if error<tol:
+        if error0<tol:
+            print('Iteration:' + str(iteration) + '\t\t' + 'Error_iter:' + str(error0)+'\t\t'+'Error_X:' + str(error1))
+            print(time.time()-time0)
             break
 
-    print('iteration:' + str(iteration) + '\t\t' + 'error:' + str(error))
-    # error = base.tennorm(base.tensor_sub(X, S1))
-    print(error)
+    if plot:
+        plt.plot(error_X)
+        plt.title('The norm difference between the reduction tensor and the original tensor')
+        plt.xlabel('Iteration')
+        plt.ylabel('Norm difference')
+        plt.show()
+        plt.plot(error_iter)
+        plt.title('The difference between the norm of restoring tensors in two consecutive iterations')
+        plt.xlabel('Iteration')
+        plt.ylabel('Norm difference')
+        plt.show()
+
     return  U,core

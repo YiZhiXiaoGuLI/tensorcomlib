@@ -1,5 +1,7 @@
 import numpy as np
 
+#Tensor Class
+
 class tensor(object):
 
 	data = None

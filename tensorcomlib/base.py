@@ -2,6 +2,7 @@ import numpy as np
 from tensorcomlib import tensor as tl
 from functools import reduce
 
+#Tensor Model-n Unfold and Fold
 def unfold(ten,mode):
     z, x, y = ten.shape
     data = ten.data
@@ -39,7 +40,7 @@ def fold(G, shape, mode):
 
     return tl.tensor(X, shape)
 
-
+#Tensor Times Matrix
 def tensor_times_mat(X,mat,mode):
     shp = X.shape
     ndim = X.ndims()
@@ -63,6 +64,7 @@ def tensor_times_mat(X,mat,mode):
     T = np.transpose(T,[order.index(i) for i in range(len(order))])
     return tl.tensor(T,T.shape)
 
+#Tensor 
 def tensor_multi_times_mat(X,matlist,modelist,transpose):
     res = X
     for i,(mat,mode) in enumerate(zip(matlist,modelist)):
@@ -117,11 +119,6 @@ def teninner(X1,X2):
     return tl.tensor(res,X1.shape)
 
 def tenouter(X1,X2):
-    '''
-    function: Two tensor's outer product
-    Input:    X1:tensor  X2:tensor
-    return:   tensor
-    '''
     return tl.tensor(np.tensordot(X1.data, X2.data, axes=0))
 
 def tennorm(X):
@@ -130,6 +127,8 @@ def tennorm(X):
 def tensor_contraction(X1,X2):
     return tl.tensor(np.tensordot(X1.data,X2.data,axes=2))
 
+
+# Tensor Addition and Subtraction
 def tensor_add(X1,X2):
     return tl.tensor(X1.data+X2.data)
 
