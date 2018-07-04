@@ -4,7 +4,7 @@ For Tensor Decomposition
 
 # Upgrade
 
-pip install --upgrade tensorcomlib
+pip install -U tensorcomlib
 
 # Qustions
 
