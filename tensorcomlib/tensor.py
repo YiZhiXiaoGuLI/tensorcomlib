@@ -34,3 +34,8 @@ class tensor(object):
 
 	def tendtype(self):
 		return self.dtype
+
+	def information(self):
+		print("Tensor's order is",self.ndims())
+		print("Tensor's shape is",self.shape)
+		print("Tensor's size is", self.size())

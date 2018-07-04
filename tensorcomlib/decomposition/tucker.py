@@ -42,12 +42,11 @@ def TruncatedHosvd(X,eps):
     R = [None for _ in range(X.ndims())]
     for d in range(dims):
         C = base.unfold(X,d)
-        eps_svd = eps**2*base.tennorm(X)**2/dims
-        U1,S1,r = SVD.TruncatedSvd(C,eps_svd=eps_svd)
+        U1,S1,r = SVD.TruncatedSvd(C,eps_svd=eps)
         R[d] = r
         U[d] = U1
         S = base.tensor_times_mat(S,U[d].T,d)
-    return U,S,R,eps_svd
+    return U,S,R,eps
 
 #PartialHosvd
 def PartialHosvd(X,ranks):
@@ -74,9 +73,12 @@ def hooi(X,maxiter=1000,init='svd',eps = 1e-11,tol=1e-10, plot = True):
         print('TruncatedHosvd Ranks:\t'+str(ranks))
         data = base.tensor_multi_times_mat(core, U, modelist=modelist, transpose=False)
         errorsvd = base.tennorm(base.tensor_sub(data, X))
-        print(errorsvd)
-        print(data.data.reshape(1024)[1:10])
-        print(X.data.reshape(1024)[1:10])
+        print('---------------------------->>>>>>')
+        print('TruncatedHosvd Init:')
+        print("Original tensor:",X.data.reshape(1024)[1:10])
+        print("TruncatedHosvd tensor:",data.data.reshape(1024)[1:10])
+        print("Truncated error:",errorsvd)
+
     else:
         U,core = randomized_hosvd(X)
 
@@ -107,8 +109,10 @@ def hooi(X,maxiter=1000,init='svd',eps = 1e-11,tol=1e-10, plot = True):
         error_X.append(error1)
 
         if error0<tol:
+            print('---------------------------->>>>>>')
+            print('HOOI:')
             print('Iteration:' + str(iteration) + '\t\t' + 'Error_iter:' + str(error0)+'\t\t'+'Error_X:' + str(error1))
-            print(time.time()-time0)
+            print("Cost time:",time.time()-time0)
             break
 
     if plot:

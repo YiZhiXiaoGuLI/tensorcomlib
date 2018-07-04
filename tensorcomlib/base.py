@@ -4,55 +4,37 @@ from functools import reduce
 
 #Tensor Model-n Unfold and Fold
 def unfold(ten,mode):
-    z, x, y = ten.shape
+
+    shp = ten.shape
+    ndim = ten.ndims()
+
+    order = []
+    order.extend([mode])
+    order.extend(range(0, mode))
+    order.extend(range(mode + 1, ndim))
+
     data = ten.data
-    if mode == 1:
-        G = np.zeros((x, 0), dtype=float)
-        for i in range(z):
-            G = np.concatenate((G, data[i, :, :]), axis=1)
-    if mode == 2:
-        G = np.zeros((y, 0), dtype=float)
-        for i in range(z):
-            G = np.concatenate((G, data[i, :, :].T), axis=1)
-    if mode == 0:
-        G = np.zeros((z, 0), dtype=float)
-        for i in range(y):
-            G = np.concatenate((G, data[:, :, i]), axis=1)
-    return G
+    newdata = np.transpose(data, order)
+    newdata = newdata.reshape(shp[mode], int(reduce(lambda x, y: x * y, shp) / shp[mode]))
+
+    return newdata
 
 
 def fold(G, shape, mode):
-    z, x, y = shape
-    row_mat, columns_mat = G.shape
-    X = np.zeros((z, x, y), float)
 
-    if mode == 1:
-        for i in range(z):
-            X[i, :, :] = G[:, i * y:y + i * y]
-
-    if mode == 2:
-        for i in range(z):
-            X[i, :, :] = G[:, i * x:x + i * x].T
-
-    if mode == 0:
-        for i in range(y):
-            X[:, :, i] = G[:, i * x:x + i * x]
-
-    return tl.tensor(X, shape)
+    return tl.tensor(X)
 
 #Tensor Times Matrix
 def tensor_times_mat(X,mat,mode):
     shp = X.shape
     ndim = X.ndims()
+
     order = []
     order.extend([mode])
-    order.extend(range(0,mode))
-    order.extend(range(mode+1,ndim))
+    order.extend(range(0, mode))
+    order.extend(range(mode + 1, ndim))
 
-    data = X.data
-    newdata = np.transpose(data,order)
-    newdata = newdata.reshape(shp[mode],int(reduce(lambda x,y:x*y,X.shape)/shp[mode]))
-    newdata = np.dot(mat, newdata)
+    newdata = np.dot(mat,unfold(X,mode).data)
     p = mat.shape[0]
 
     newshp = [p]
@@ -62,7 +44,7 @@ def tensor_times_mat(X,mat,mode):
     T = newdata.reshape(newshp)
 
     T = np.transpose(T,[order.index(i) for i in range(len(order))])
-    return tl.tensor(T,T.shape)
+    return tl.tensor(T)
 
 #Tensor 
 def tensor_multi_times_mat(X,matlist,modelist,transpose):
