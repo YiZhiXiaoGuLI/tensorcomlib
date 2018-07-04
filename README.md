@@ -1,4 +1,5 @@
 # Tensorcomlib
+
 For Tensor Decomposition
 
 # Upgrade
@@ -9,8 +10,6 @@ pip install --upgrade tensorcomlib
 
 1.Tucker HOOI 分解结果有时候不收敛
 
-2.eps的范围
+2.CP分解
 
-3.CP分解
-
-4.高阶fold和unfold
+3.高阶fold
